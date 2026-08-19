@@ -1,4 +1,10 @@
 {
     "buildCommand": "npm run build -w packages/shared && npm run build -w packages/frontend",
-    "outputDirectory": "packages/frontend/dist"
+    "outputDirectory": "packages/frontend/dist",
+    "rewrites": [
+        {
+            "source": "/((?!api|ws).*)",
+            "destination": "/"
+        }
+    ]
 }
