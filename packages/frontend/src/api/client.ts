@@ -1,4 +1,21 @@
-const API_URL = import.meta.env.VITE_API_URL || '';
+const RAW_API_URL = import.meta.env.VITE_API_URL || '';
+
+// VITE_API_URL is easy to confuse with VITE_WS_URL, and fetch() cannot use the
+// ws:// or wss:// schemes - it rejects immediately without issuing a request,
+// so the browser logs nothing and the failure looks like a CORS problem that
+// isn't there. Accept the socket schemes and map them to their HTTP
+// equivalents. Trailing slashes are trimmed so a copied URL cannot produce a
+// doubled '//api/rooms' path.
+const API_URL = RAW_API_URL
+    .replace(/^wss:\/\//i, 'https://')
+    .replace(/^ws:\/\//i, 'http://')
+    .replace(/\/+$/, '');
+
+if (RAW_API_URL && RAW_API_URL !== API_URL) {
+    console.warn(
+        `VITE_API_URL is set to "${RAW_API_URL}", which fetch() cannot use. Falling back to "${API_URL}". Set VITE_API_URL to an http(s) URL, or remove it entirely to use this site's /api proxy.`
+    );
+}
 
 interface ApiOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
