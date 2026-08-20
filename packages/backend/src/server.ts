@@ -9,16 +9,27 @@ import { WebSocketServer } from './ws/server.js';
 
 const app = express();
 
-// CORS_ORIGIN may be a single origin or a comma-separated list of them.
-const allowedOrigins: (string | RegExp)[] = config.corsOrigin
+// Vercel gives every deploy a new hostname, so preview URLs can never be
+// covered by an exact-match list.
+const VERCEL_HOSTNAME = /^https:\/\/[a-z0-9][a-z0-9-]*\.vercel\.app$/;
+
+// Read CORS_ORIGIN directly rather than via config, whose localhost default
+// would make an unset value indistinguishable from a configured one.
+// CORS_ORIGIN may be a single origin or a comma-separated list.
+const configuredOrigins: (string | RegExp)[] = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
 
-// Vercel preview deployments get a new hostname on every deploy, so they can
-// never be covered by an exact-match list. Opt in with CORS_ALLOW_VERCEL_PREVIEWS.
-if (process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true') {
-    allowedOrigins.push(/^https:\/\/[a-z0-9][a-z0-9-]*\.vercel\.app$/);
+// Unset: assume a fresh deploy and accept local development plus Vercel, so
+// the app works before anything is configured. Set: trust it exactly, and
+// admit preview hostnames only when explicitly asked to.
+const allowedOrigins: (string | RegExp)[] = configuredOrigins.length > 0
+    ? [...configuredOrigins]
+    : ['http://localhost:5173', 'http://localhost:3000', VERCEL_HOSTNAME];
+
+if (configuredOrigins.length > 0 && process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true') {
+    allowedOrigins.push(VERCEL_HOSTNAME);
 }
 
 // Middleware
@@ -26,7 +37,7 @@ app.use(helmet({
     contentSecurityPolicy: false, // Allow oEmbed iframes
 }));
 app.use(cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true,
 }));
 app.use(express.json());
@@ -99,7 +110,7 @@ server.listen(config.port, () => {
     console.log(`🚀 ReelRoom Backend running on port ${config.port}`);
     console.log(`   Health: http://localhost:${config.port}/health`);
     console.log(`   WebSocket: ws://localhost:${config.port}`);
-    console.log(`   Allowed origins: ${allowedOrigins.map((entry) => entry.toString()).join(', ') || '(none)'}`);
+    console.log(`   Allowed origins: ${allowedOrigins.map((entry) => entry.toString()).join(', ')}`);
 });
 
 export { app, server, wss };
