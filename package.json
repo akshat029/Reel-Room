@@ -15,7 +15,7 @@
         "test": "npm run test -w packages/frontend && npm run test -w packages/backend",
         "test:e2e": "playwright test",
         "lint": "eslint packages/*/src --ext .ts,.tsx",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/backend/tsconfig.json && tsc --noEmit -p packages/frontend/tsconfig.json"
     },
     "devDependencies": {
         "@playwright/test": "^1.40.0",

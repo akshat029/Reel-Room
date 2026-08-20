@@ -10,8 +10,18 @@ import type {
     WSMessage,
 } from '@reelroom/shared';
 
+// Vercel proxies /api to the backend (see vercel.json) but cannot proxy
+// WebSocket upgrades, so the socket has to reach the backend directly.
+const PRODUCTION_WS_URL = 'wss://reel-room-0njk.onrender.com';
+
+const isLocalhost = window.location.hostname === 'localhost'
+    || window.location.hostname === '127.0.0.1';
+
+// On localhost, use the current origin so the vite dev proxy handles /ws.
 const WS_URL = import.meta.env.VITE_WS_URL
-    || `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}`;
+    || (isLocalhost
+        ? `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}`
+        : PRODUCTION_WS_URL);
 
 // Module-level singleton: every component that calls useWebSocket shares the
 // same connection. (Previously each hook instance created its own WebSocket,

@@ -6,10 +6,36 @@ interface ApiOptions {
     headers?: Record<string, string>;
 }
 
+// fetch() only rejects when the request never completed at all: the API is
+// unreachable or asleep, the browser blocked it as mixed content, or the CORS
+// check failed. The browser reports every one of those as the same opaque
+// 'Failed to fetch', so translate it into something actionable.
+async function sendRequest(url: string, init: RequestInit): Promise<Response> {
+    try {
+        return await fetch(url, init);
+    } catch {
+        if (!API_URL) {
+            throw new Error(
+                'VITE_API_URL is not set, so this request went to the web app instead of the API server. Set it to the backend URL and redeploy.'
+            );
+        }
+
+        if (API_URL.startsWith('http://') && window.location.protocol === 'https:') {
+            throw new Error(
+                `Blocked an insecure request to ${API_URL} from an HTTPS page. VITE_API_URL must use https:// - update it and redeploy.`
+            );
+        }
+
+        throw new Error(
+            `Could not reach the API at ${API_URL}. It may still be waking up (free instances take up to a minute), or its CORS_ORIGIN may not allow ${window.location.origin}.`
+        );
+    }
+}
+
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     const { method = 'GET', body, headers = {} } = options;
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await sendRequest(`${API_URL}${endpoint}`, {
         method,
         headers: {
             'Content-Type': 'application/json',
@@ -18,13 +44,27 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
         body: body ? JSON.stringify(body) : undefined,
     });
 
-    const data = await response.json();
+    // Read the body as text first. Error pages from Vercel, Render or a proxy
+    // are HTML, and calling response.json() on those throws a SyntaxError that
+    // hides the actual status code.
+    const raw = await response.text();
+    let payload: any = {};
 
-    if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || 'API request failed');
+    if (raw) {
+        try {
+            payload = JSON.parse(raw);
+        } catch {
+            throw new Error(
+                `The API returned a non-JSON response (HTTP ${response.status}) from ${API_URL}${endpoint}.`
+            );
+        }
     }
 
-    return data.data as T;
+    if (!response.ok || !payload.success) {
+        throw new Error(payload.error?.message || `API request failed (HTTP ${response.status})`);
+    }
+
+    return payload.data as T;
 }
 
 // Room API

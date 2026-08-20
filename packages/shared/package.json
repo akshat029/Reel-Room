@@ -2,9 +2,10 @@
     "name": "@reelroom/shared",
     "version": "1.0.0",
     "main": "dist/index.js",
+    "module": "dist/esm/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json && node scripts/write-esm-marker.mjs",
         "watch": "tsc --watch"
     },
     "devDependencies": {

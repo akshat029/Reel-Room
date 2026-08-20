@@ -1,0 +1,22 @@
+# Render Blueprint for the ReelRoom backend (REST API + WebSocket signalling).
+# Only used if you deploy this repo via Render -> New -> Blueprint.
+# If the service already exists, the dashboard settings win - mirror these values there.
+services:
+  - type: web
+    name: reelroom-backend
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install --include=dev && npm run build -w packages/shared && npm run build -w packages/backend
+    startCommand: npm start -w packages/backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
