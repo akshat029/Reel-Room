@@ -9,12 +9,24 @@ import { WebSocketServer } from './ws/server.js';
 
 const app = express();
 
+// CORS_ORIGIN may be a single origin or a comma-separated list of them.
+const allowedOrigins: (string | RegExp)[] = config.corsOrigin
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+// Vercel preview deployments get a new hostname on every deploy, so they can
+// never be covered by an exact-match list. Opt in with CORS_ALLOW_VERCEL_PREVIEWS.
+if (process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true') {
+    allowedOrigins.push(/^https:\/\/[a-z0-9][a-z0-9-]*\.vercel\.app$/);
+}
+
 // Middleware
 app.use(helmet({
     contentSecurityPolicy: false, // Allow oEmbed iframes
 }));
 app.use(cors({
-    origin: config.corsOrigin,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : 'http://localhost:5173',
     credentials: true,
 }));
 app.use(express.json());
@@ -32,6 +44,7 @@ app.get('/', (_req, res) => {
         service: 'reelroom-backend',
         status: 'ok',
         message: 'ReelRoom API. The web app is deployed separately - open the frontend URL, not this one.',
+        allowedOrigins: allowedOrigins.map((entry) => entry.toString()),
         endpoints: {
             health: 'GET /health',
             createRoom: 'POST /api/rooms',
@@ -86,6 +99,7 @@ server.listen(config.port, () => {
     console.log(`🚀 ReelRoom Backend running on port ${config.port}`);
     console.log(`   Health: http://localhost:${config.port}/health`);
     console.log(`   WebSocket: ws://localhost:${config.port}`);
+    console.log(`   Allowed origins: ${allowedOrigins.map((entry) => entry.toString()).join(', ') || '(none)'}`);
 });
 
 export { app, server, wss };
