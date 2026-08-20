@@ -3,6 +3,10 @@
     "outputDirectory": "packages/frontend/dist",
     "rewrites": [
         {
+            "source": "/api/:path*",
+            "destination": "https://reel-room-0njk.onrender.com/api/:path*"
+        },
+        {
             "source": "/((?!api|ws).*)",
             "destination": "/"
         }
