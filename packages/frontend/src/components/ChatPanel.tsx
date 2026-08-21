@@ -93,6 +93,7 @@ export function ChatPanel() {
                             type="button"
                             onClick={() => setShowEmoji(!showEmoji)}
                             className="btn-icon"
+                            aria-label="Add a reaction"
                         >
                             <span className="text-lg">😊</span>
                         </button>
@@ -106,6 +107,7 @@ export function ChatPanel() {
                                         type="button"
                                         onClick={() => handleReaction(emoji)}
                                         className="w-10 h-10 text-xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors hover:scale-110"
+                                        aria-label={`React with ${emoji}`}
                                     >
                                         {emoji}
                                     </button>
@@ -121,6 +123,7 @@ export function ChatPanel() {
                         placeholder="Type a message..."
                         maxLength={500}
                         className="input flex-1"
+                        aria-label="Chat message"
                         onFocus={() => setShowEmoji(false)}
                     />
 
@@ -128,6 +131,7 @@ export function ChatPanel() {
                         type="submit"
                         disabled={!message.trim()}
                         className="btn-primary disabled:opacity-50"
+                        aria-label="Send message"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
