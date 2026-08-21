@@ -30,12 +30,28 @@ test.describe('ReelRoom E2E Tests', () => {
         await expect(page.locator('text=/Room:.*[A-Z0-9]{6}/')).toBeVisible();
     });
 
-    test('should show error for invalid room code', async ({ page }) => {
-        await page.getByPlaceholder(/enter room code/i).fill('INVALID');
+    test('should reject a badly formatted room code', async ({ page }) => {
+        // Room codes are exactly 6 characters drawn from ROOM_CODE_CHARS in
+        // packages/shared, which leaves out I, O, 0 and 1 so a code can never be
+        // misread. 'ABCDI1' is the right length but uses two excluded
+        // characters, so the app rejects it without troubling the server: it
+        // stays where it is and explains what is wrong.
+        await page.getByPlaceholder(/enter room code/i).fill('ABCDI1');
         await page.getByRole('button', { name: /join/i }).click();
 
-        await expect(page).toHaveURL('/join/INVALID');
-        await expect(page.getByText(/room not found/i)).toBeVisible();
+        await expect(page).toHaveURL('/');
+        await expect(page.getByText(/invalid room code format/i)).toBeVisible();
+    });
+
+    test('should show error for a room that does not exist', async ({ page }) => {
+        // 'ZZZZZZ' is a valid shape, so the app navigates and asks the server,
+        // which answers 404. JoinRoom is configured with retry: 1, so allow for
+        // two attempts before the error panel renders.
+        await page.getByPlaceholder(/enter room code/i).fill('ZZZZZZ');
+        await page.getByRole('button', { name: /join/i }).click();
+
+        await expect(page).toHaveURL('/join/ZZZZZZ');
+        await expect(page.getByRole('heading', { name: /room not found/i })).toBeVisible({ timeout: 15000 });
     });
 
     test('should join existing room', async ({ page, context }) => {
