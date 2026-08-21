@@ -14,7 +14,8 @@
         "build:backend": "npm run build -w packages/backend",
         "test": "npm run test -w packages/frontend && npm run test -w packages/backend",
         "test:e2e": "playwright test",
-        "lint": "eslint packages/*/src --ext .ts,.tsx",
+        "lint": "echo 'Lint is not set up yet: there is no ESLint config file in this repo and @typescript-eslint/parser is not installed, so ESLint cannot read TypeScript. Use npm run typecheck instead. To enable real linting: npm i -D @typescript-eslint/parser @typescript-eslint/eslint-plugin, commit the updated package-lock.json, add an .eslintrc.json, then run the lint:eslint script.'",
+        "lint:eslint": "eslint packages/*/src --ext .ts,.tsx",
         "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/backend/tsconfig.json && tsc --noEmit -p packages/frontend/tsconfig.json"
     },
     "devDependencies": {
